@@ -63,23 +63,23 @@ void toDatabase(int name, string last){
     try {
 
 
-        sql::Driver *driver;
-        sql::Connection *con;
-        sql::PreparedStatement *pstmt;
+        sql::Driver *driver; // ustalanie sterownika z bazą
+        sql::Connection *con; // konektor połączenia z bazą MySQL
+        sql::PreparedStatement *pstmt; // wykonywanie polecenia SQL
 
         /* Create a connection */
         driver = get_driver_instance();
         con = driver->connect("tcp://127.0.0.1:3306", "root", "Qwerty12#");
         /* Connect to the MySQL test database */
-        con->setSchema("bitbay");
+        con->setSchema("bitbay"); // nazwa tabeli
 
-        pstmt = con->prepareStatement("INSERT INTO rate(name, value) VALUES (?, ?)");
-        pstmt->setInt(1, name);
-        pstmt->setString(2, last);
-        pstmt->executeUpdate();
+        pstmt = con->prepareStatement("INSERT INTO rate(name, value) VALUES (?, ?)"); // istrukcje SQL. '?' zostaną zamienione na wartości podane w kolejnych poleceniach. czytane od lewej do prawej
+        pstmt->setInt(1, name); // pierwy '?' w powyższym poleceniu SQL - relacja do kolumy z nazwami kryptowalut. wartosc "int"
+        pstmt->setString(2, last); // drugi '?' w powyższym poleceniu SQL - wartość kursu
+        pstmt->executeUpdate(); // wykonaj polecenie
 
-        delete con;
-        delete pstmt;
+        delete con; // usuwanie z pamieci
+        delete pstmt; // usuwanie z pamieci
 
     } catch (sql::SQLException &e) {
 
@@ -96,26 +96,26 @@ int main()
     time_t time_end;
 
     const char* URL_GAME = "https://bitbay.net/API/Public/GAMEPLN/all.json";
-    time( & time_begin );
-    string last_game_tmp = getLast(URL_GAME);
-    string last_game = "";
+    time( & time_begin ); // zapisanie czasu do zmiennej. 
+    string last_game_tmp = getLast(URL_GAME); // pobranie aktualnego kursu waluty
+    string last_game = ""; // zmienna pomocnicza
 
     do {
 
-        time( & time_end );
+        time( & time_end ); // pobieranie aktualnego czasu w formie UNIX
         //cout << time_end << endl;
-        last_game_tmp = getLast(URL_GAME);
+        last_game_tmp = getLast(URL_GAME); // funkcja zwraca kurs z serwisu BitBay
 
-        if(last_game != last_game_tmp && !last_game_tmp.empty()){
+        if(last_game != last_game_tmp && !last_game_tmp.empty()){ // porównuje aktualny kurs z ostatnio pobranym. po przekroczeniu limitu zwracana jest pusta wartość
+            // w przypadku gdy poprzednio pobrany kurs różni się z najnowszym...
 
+            last_game = last_game_tmp; // nowy kurs jest zapisywany do zmiennej ze starym kursem
 
-            last_game = last_game_tmp;
-
-            toDatabase(2, last_game);
+            toDatabase(2, last_game); // zapisuje do bazy najnowszy kurs. pierwszy arg. oznacza nazwe krypto. (1 - LSK, 2 - GAME). 
 
         sleep(5);
 
-    }while (1/*(time_begin+3600 > time_end)*/);
+    }while (1/*(time_begin+3600 > time_end)*/); 
 
 
     return EXIT_SUCCESS;
